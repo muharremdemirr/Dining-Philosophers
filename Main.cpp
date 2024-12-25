@@ -1,18 +1,8 @@
 /*
-* 
-* 200101010 - Muharrem DEMÝR
-* 210101157 - Berkay DURSUN
-* 200101007 - Murat EKER
-*  
-* Legend kýsmýnda;
 * T --> Think
 * E --> Eat
 * H --> Hungry
 * D --> Dead
-* olarak gösterilmiþtir. "HUNGRY" ve "DEAD" durumlarý gözlemi kolaylaþtýrmak adýna eklenmiþtir.
-* 
-* Proje grup üyelerinin ortak katýlýmý ile yapýlmýþtýr.
-* 
 */
 
 
@@ -21,7 +11,7 @@
 #include <stdbool.h>
 
 #define PHILOSOPHER_COUNT 5
-#define MAX_RETRIES 5 // 5 tur yemek yiyemeyen ölü kabul edilir
+#define MAX_RETRIES 5 // 5 tur yemek yiyemeyen Ã¶lÃ¼ kabul edilir
 
 HANDLE tableSemaphore;
 
@@ -29,7 +19,7 @@ HANDLE tableSemaphore;
 enum PhilosopherState { THINKING, HUNGRY, EATING, DEAD };
 PhilosopherState states[PHILOSOPHER_COUNT] = { THINKING, THINKING, THINKING, THINKING, THINKING };
 
-HANDLE chopsticks[PHILOSOPHER_COUNT]; // Çubuklar
+HANDLE chopsticks[PHILOSOPHER_COUNT]; // Ã‡ubuklar
 bool thread_continue = false;
 int FRM1;
 ICBYTES panel;
@@ -41,80 +31,78 @@ int positionsY[PHILOSOPHER_COUNT] = { 150, 300, 600, 600, 300 };
 int philosopherColors[PHILOSOPHER_COUNT] = {
     0xFFA500, // P1 - Turuncu
     0x800080, // P2 - Mor
-    0x808000, // P3 - Zeytin Yeþili
+    0x808000, // P3 - Zeytin YeÃ¾ili
     0x800000, // P4 - Bordo
     0xcd6090, // P5 - Pembe
 };
 
-// Çubuklarýn renklerini tutacak array
-int chopstickColors[PHILOSOPHER_COUNT] = { 0x000000, 0x000000, 0x000000, 0x000000, 0x000000 }; // Baþlangýçta siyah
+// Colors of chopsticks
+int chopstickColors[PHILOSOPHER_COUNT] = { 0x000000, 0x000000, 0x000000, 0x000000, 0x000000 }; // BaÃ¾langÃ½Ã§ta siyah
 
-// Filozofun yemek yiyememe sayacý
+// Counter of hunger
 int philosopherRetries[PHILOSOPHER_COUNT];
 
-// Durum renkleri
+// Color Of States
 int getStateColor(PhilosopherState state) {
     switch (state) {
     case THINKING:
-        return 0x008000; // Yeþil (Düþünen)
+        return 0x008000; // YeÃ¾il (DÃ¼Ã¾Ã¼nen)
     case HUNGRY:
-        return 0xFF0000;  // Kýrmýzý (Açlýk)
+        return 0xFF0000;  // KÃ½rmÃ½zÃ½ (AÃ§lÃ½k)
     case EATING:
         return 0x0000FF;  // Mavi (Yemek yiyor)
     case DEAD:
-        return 0x000000; // Siyah (Ölü)
+        return 0x000000; // Siyah (Ã–lÃ¼)
     default:
-        return 0xFF0000; // Kýrmýzý (Varsayýlan)
+        return 0xFF0000; // KÃ½rmÃ½zÃ½ (VarsayÃ½lan)
     }
 }
 
-// Sað üst köþede durumlarý göster
+// Legend
 void drawLegend() {
-    // "T" harfini çiz
-    FillRect(panel, 900, 50, 50, 10, 0x008000); // Yeþil (T - Thinking)
-    FillRect(panel, 920, 60, 10, 40, 0x008000); // Ortadaki dikey çubuk
+    // Draw "T" 
+    FillRect(panel, 900, 50, 50, 10, 0x008000); // YeÃ¾il (T - Thinking)
+    FillRect(panel, 920, 60, 10, 40, 0x008000); // Ortadaki dikey Ã§ubuk
 
-    // "H" harfini çiz
-    FillRect(panel, 900, 120, 10, 50, 0xFF0000); // Kýrmýzý (H - Hungry)
-    FillRect(panel, 940, 120, 10, 50, 0xFF0000); // Sað dikey çubuk
-    FillRect(panel, 910, 140, 30, 10, 0xFF0000); // Ortadaki yatay çubuk
+    // Draw "H"
+    FillRect(panel, 900, 120, 10, 50, 0xFF0000); // KÃ½rmÃ½zÃ½ (H - Hungry)
+    FillRect(panel, 940, 120, 10, 50, 0xFF0000); // SaÃ° dikey Ã§ubuk
+    FillRect(panel, 910, 140, 30, 10, 0xFF0000); // Ortadaki yatay Ã§ubuk
 
-    // "E" harfini çiz
+    // Draw "E"
     FillRect(panel, 900, 200, 10, 50, 0x0000FF); // Mavi (E - Eating)
-    FillRect(panel, 910, 200, 30, 10, 0x0000FF); // Üst yatay çubuk
-    FillRect(panel, 910, 225, 20, 10, 0x0000FF); // Orta yatay çubuk
-    FillRect(panel, 900, 250, 40, 10, 0x0000FF); // Alt yatay çubuk
+    FillRect(panel, 910, 200, 30, 10, 0x0000FF); // Ãœst yatay Ã§ubuk
+    FillRect(panel, 910, 225, 20, 10, 0x0000FF); // Orta yatay Ã§ubuk
+    FillRect(panel, 900, 250, 40, 10, 0x0000FF); // Alt yatay Ã§ubuk
 
-    // "D" harfini çiz
+    // Draw "D"
     FillRect(panel, 900, 300, 10, 50, 0x000000); // Siyah (D - Dead)
-    FillRect(panel, 910, 300, 30, 10, 0x000000); // Üst Çubuk
-    FillRect(panel, 910, 340, 30, 10, 0x000000); // Alt Çubuk
-    FillRect(panel, 940, 310, 10, 30, 0x000000); // Sað Yay
+    FillRect(panel, 910, 300, 30, 10, 0x000000); // Ãœst Ã‡ubuk
+    FillRect(panel, 910, 340, 30, 10, 0x000000); // Alt Ã‡ubuk
+    FillRect(panel, 940, 310, 10, 30, 0x000000); // SaÃ° Yay
 }
 
 void drawPhilosophers() {
-    // Filozoflarý çiz
     for (int i = 0; i < PHILOSOPHER_COUNT; i++) {
-        FillCircle(panel, positionsX[i], positionsY[i], 60, getStateColor(states[i])); // Düþünen, açlýk vs.
-        FillCircle(panel, positionsX[i], positionsY[i], 20, philosopherColors[i]); // Filozofun rengi
+        FillCircle(panel, positionsX[i], positionsY[i], 60, getStateColor(states[i])); // States
+        FillCircle(panel, positionsX[i], positionsY[i], 20, philosopherColors[i]); // Own color of Philosophers
     }
 
-    // Çubuklarý çiz (Her bir filozof arasýnda bir çubuk olacak)
+    // draw chopsticks
     for (int i = 0; i < PHILOSOPHER_COUNT; i++) {
-        int x1 = positionsX[i] + positionsX[(i + 1) % PHILOSOPHER_COUNT]; // Filozofun saðýndaki çubuk
+        int x1 = positionsX[i] + positionsX[(i + 1) % PHILOSOPHER_COUNT]; // Filozofun saÃ°Ã½ndaki Ã§ubuk
         int y1 = positionsY[i] + positionsY[(i + 1) % PHILOSOPHER_COUNT];
 
 
-        // Çubuðun rengini belirle
-        int chopstickColor = chopstickColors[i]; // Varsayýlan çubuk rengi (siyah)
+        // Color of the chopstics
+        int chopstickColor = chopstickColors[i]; // VarsayÃ½lan Ã§ubuk rengi (siyah)
 
-        // Eðer bir filozof yemek yiyorsa, o çubuðun rengini deðiþtireceðiz
+        // Will change the color of the chopstick in use
         if (states[i] == EATING) {
-            chopstickColor = philosopherColors[i]; // Çubuðun rengi, yemek yiyen filozofun rengiyle ayný olacak
+            chopstickColor = philosopherColors[i]; 
         }
 
-        // Çubuðu çiz
-        FillRect(panel, x1 / 2, y1 / 2, 20, 100, chopstickColor); // Çubuðun rengi
+        FillRect(panel, x1 / 2, y1 / 2, 20, 100, chopstickColor); // Ã‡ubuÃ°un rengi
     }
 
     FillCircle(panel, 400, 400, 120, 0x8B4513); // Kahverengi masa
@@ -123,20 +111,20 @@ void drawPhilosophers() {
 
 
 
-    // Masanýn üzerine yemekler (Küçük yuvarlaklar)
-    FillCircle(panel, 340, 340, 15, 0xFF6347); // Yemek 1 (Kýrmýzý - Domates)
-    FillCircle(panel, 470, 340, 15, 0xFFFF00); // Yemek 2 (Sarý - Limon)
-    FillCircle(panel, 340, 470, 15, 0x90EE90); // Yemek 3 (Yeþil - Marul)
-    FillCircle(panel, 470, 470, 15, 0xFF4500); // Yemek 4 (Turuncu - Havuç)
+    // Food
+    FillCircle(panel, 340, 340, 15, 0xFF6347); // Yemek 1 (Red - Tomato)
+    FillCircle(panel, 470, 340, 15, 0xFFFF00); // Yemek 2 (Yellow - Lemon)
+    FillCircle(panel, 340, 470, 15, 0x90EE90); // Yemek 3 (Green - Lettuce)
+    FillCircle(panel, 470, 470, 15, 0xFF4500); // Yemek 4 (Orange - Carrot)
 
-    drawLegend(); // Sað üst köþeye legend çiz
+    drawLegend(); 
     DisplayImage(FRM1, panel);
 }
 
 void PhilosopherSimulation(void* param) {
     int id = (int)param;
 
-    Sleep(id * 100); // Baþlangýç sýralamasý
+    Sleep(id * 100); // Ä°nitial positions
     while (thread_continue) {
         states[id] = HUNGRY;
         drawPhilosophers();
@@ -145,28 +133,28 @@ void PhilosopherSimulation(void* param) {
         // Semaphore'dan izin al
         WaitForSingleObject(tableSemaphore, INFINITE);
 
-        // Çubuklarý al
-        WaitForSingleObject(chopsticks[id], INFINITE); // Sol çubuk
-        WaitForSingleObject(chopsticks[(id + 1) % PHILOSOPHER_COUNT], INFINITE); // Sað çubuk
+        // Ã‡ubuklarÃ½ al
+        WaitForSingleObject(chopsticks[id], INFINITE); // Left stich
+        WaitForSingleObject(chopsticks[(id + 1) % PHILOSOPHER_COUNT], INFINITE); // Right Chopstick
 
-        // Yemek yeme durumu
+        // Eating State
         states[id] = EATING;
-        chopstickColors[id] = philosopherColors[id]; // Sol çubuðun rengini filozofun rengiyle deðiþtir
-        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = philosopherColors[id]; // Sað çubuðun rengini filozofun rengiyle deðiþtir
+        chopstickColors[id] = philosopherColors[id]; // Sol Ã§ubuÃ°un rengini filozofun rengiyle deÃ°iÃ¾tir
+        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = philosopherColors[id]; // SaÃ° Ã§ubuÃ°un rengini filozofun rengiyle deÃ°iÃ¾tir
         drawPhilosophers();
-        Sleep(2000); // Yemek yeme süresi
+        Sleep(2000); 
 
-        // Çubuklarý serbest býrak
+        // Release Chopsticks
         ReleaseMutex(chopsticks[id]);
         ReleaseMutex(chopsticks[(id + 1) % PHILOSOPHER_COUNT]);
 
-        // Semaphore iznini býrak
+        
         ReleaseSemaphore(tableSemaphore, 1, NULL);
 
-        // Düþünme durumu
+        // Thinking State
         states[id] = THINKING;
-        chopstickColors[id] = 0x000000; // Çubuðu siyah yap
-        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = 0x000000; // Çubuðu siyah yap
+        chopstickColors[id] = 0x000000; // Ã‡ubuÃ°u siyah yap
+        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = 0x000000; // Ã‡ubuÃ°u siyah yap
         drawPhilosophers();
         Sleep(1000);
     }
@@ -175,7 +163,7 @@ void PhilosopherSimulation(void* param) {
 void PhilosopherSimulationDeadlock(void* param) {
     int id = (int)param;
 
-    Sleep(id * 100); // Baþlangýç sýralamasý
+    Sleep(id * 100); 
     while (thread_continue) {
         if (states[id] == DEAD) break;
 
@@ -183,7 +171,7 @@ void PhilosopherSimulationDeadlock(void* param) {
         drawPhilosophers();
         Sleep(1000);
 
-        // Çubuklarý al
+        // Taking sticks
         if (WaitForSingleObject(chopsticks[id], 1000) == WAIT_TIMEOUT) {
             philosopherRetries[id]++;
             if (philosopherRetries[id] >= MAX_RETRIES) {
@@ -192,11 +180,11 @@ void PhilosopherSimulationDeadlock(void* param) {
                 Sleep(1000);
                 break;
             }
-            continue; // Çubuðu alamazsa döngünün baþýna dön
+            continue; 
         }
 
         if (WaitForSingleObject(chopsticks[(id + 1) % PHILOSOPHER_COUNT], 1000) == WAIT_TIMEOUT) {
-            // Sað çubuðu alamazsa sol çubuðu serbest býrak ve tekrar dene
+           
             ReleaseMutex(chopsticks[id]);
             philosopherRetries[id]++;
             if (philosopherRetries[id] >= MAX_RETRIES) {
@@ -208,21 +196,19 @@ void PhilosopherSimulationDeadlock(void* param) {
             continue;
         }
 
-        // Yemek yiyen filozofun rengini al
         states[id] = EATING;
-        philosopherRetries[id] = 0; // Yemek yiyince açlýk seviyesi sýfýrlanýr
-        chopstickColors[id] = philosopherColors[id]; // Sol çubuðun rengini yemek yiyen filozofun rengiyle deðiþtir
-        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = philosopherColors[id]; // Sað çubuðun rengini yemek yiyen filozofun rengiyle deðiþtir
+        philosopherRetries[id] = 0; 
+        chopstickColors[id] = philosopherColors[id]; 
+        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = philosopherColors[id]; 
         drawPhilosophers();
-        Sleep(2000); // Yemek yeme süresi
+        Sleep(2000); 
 
-        // Çubuklarý serbest býrak
         ReleaseMutex(chopsticks[id]);
         ReleaseMutex(chopsticks[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT]);
 
         states[id] = THINKING;
-        chopstickColors[id] = 0x000000; // Çubuðu siyah yap
-        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = 0x000000; // Çubuðu siyah yap
+        chopstickColors[id] = 0x000000; // Ã‡ubuÃ°u siyah yap
+        chopstickColors[(id + PHILOSOPHER_COUNT - 1) % PHILOSOPHER_COUNT] = 0x000000; // Paint black if philososphers dead
         drawPhilosophers();
         Sleep(1000);
     }
@@ -295,12 +281,12 @@ void ICGUI_main() {
     tableSemaphore = CreateSemaphore(NULL, PHILOSOPHER_COUNT - 1, PHILOSOPHER_COUNT - 1, NULL);
 
     for (int i = 0; i < PHILOSOPHER_COUNT; i++) {
-        chopsticks[i] = CreateMutex(NULL, FALSE, NULL); // Çubuklarý paylaþmak için mutexler
+        chopsticks[i] = CreateMutex(NULL, FALSE, NULL); // Ã‡ubuklarÃ½ paylaÃ¾mak iÃ§in mutexler
     }
 
     CreateImage(panel, 1200, 800, ICB_UINT);
     FRM1 = ICG_FrameMedium(0, 50, 1200, 800);
-    FillRect(panel, 0, 0, 1200, 800, 0xD3D3D3); // Açýk gri
+    FillRect(panel, 0, 0, 1200, 800, 0xD3D3D3); // AÃ§Ã½k gri
     ICG_Button(50, 20, 200, 30, "Deadlock", buttonDeadlock);
     ICG_Button(270, 20, 200, 30, "Safe", buttonSafe);
 
